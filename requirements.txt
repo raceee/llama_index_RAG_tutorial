@@ -1,0 +1,11 @@
+llama-index-readers-file
+pymupdf
+llama-index-vector-stores-postgres
+llama-index-embeddings-huggingface
+llama-index-llms-llama-cpp
+llama-cpp-python
+psycopg2-binary
+pgvector
+asyncpg
+sqlalchemy[asyncio]
+greenlet
