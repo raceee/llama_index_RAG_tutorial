@@ -7,6 +7,7 @@ from pathlib import Path
 from llama_index.readers.file import PyMuPDFReader
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import TextNode
+from llama_index.core.vector_stores import VectorStoreQuery
 
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en")
 model_url = "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGUF/resolve/main/llama-2-13b-chat.Q4_0.gguf"
@@ -39,8 +40,10 @@ conn = psycopg2.connect(
 conn.autocommit = True
 
 with conn.cursor() as c:
+    c.execute(f"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '{db_name}' AND pid <> pg_backend_pid();")
     c.execute(f"DROP DATABASE IF EXISTS {db_name}")
     c.execute(f"CREATE DATABASE {db_name}")
+
 
 vector_store = PGVectorStore.from_params(
     database=db_name,
@@ -67,7 +70,7 @@ doc_idxs = []
 for i, doc in enumerate(documents):
     cur_text_chunks = text_parser.split_text(doc.text)
     text_chunks.extend(cur_text_chunks)
-    doc_idxs.extend([doc_idxs] * len(cur_text_chunks))
+    doc_idxs.extend([i] * len(cur_text_chunks))
 
 # make 'nodes' out of chunks
 print("doc_idxs checkpoint: ", doc_idxs)
@@ -85,3 +88,21 @@ for node in nodes:
     node.embedding = node_embedding
 
 vector_store.add(nodes)
+
+
+query_str = "Give me a summary of the diversity equity and inclusion policy."
+
+query_embedding = embed_model.get_query_embedding(query_str)
+
+# construct vector store query
+from llama_index.core.vector_stores import VectorStoreQuery
+
+query_mode = "default"
+# query_mode = "sparse"
+# query_mode = "hybrid"
+
+vector_store_query = VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=2, mode=query_mode)
+
+# returns a VectorStoreQueryResult
+query_result = vector_store.query(vector_store_query)
+print(query_result.nodes[0].get_content())
