@@ -9,6 +9,7 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores import VectorStoreQuery
 from retriever_class import VectorDBRetriever
+from llama_index.core.query_engine import RetrieverQueryEngine
 
 embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en")
 model_url = "https://huggingface.co/TheBloke/Llama-2-13B-chat-GGUF/resolve/main/llama-2-13b-chat.Q4_0.gguf"
@@ -89,38 +90,39 @@ for node in nodes:
     node.embedding = node_embedding
 
 vector_store.add(nodes)
+# query_str = "Give me a summary of the diversity equity and inclusion policy."
 
+# query_embedding = embed_model.get_query_embedding(query_str)
 
-query_str = "Give me a summary of the diversity equity and inclusion policy."
+# # construct vector store query
+# from llama_index.core.vector_stores import VectorStoreQuery
 
-query_embedding = embed_model.get_query_embedding(query_str)
+# query_mode = "default"
+# # query_mode = "sparse"
+# # query_mode = "hybrid"
 
-# construct vector store query
-from llama_index.core.vector_stores import VectorStoreQuery
+# vector_store_query = VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=2, mode=query_mode)
 
-query_mode = "default"
-# query_mode = "sparse"
-# query_mode = "hybrid"
+# # returns a VectorStoreQueryResult
+# query_result = vector_store.query(vector_store_query)
+# print(query_result.nodes[0].get_content())
 
-vector_store_query = VectorStoreQuery(query_embedding=query_embedding, similarity_top_k=2, mode=query_mode)
+# from llama_index.core.schema import NodeWithScore
+# from typing import Optional
 
-# returns a VectorStoreQueryResult
-query_result = vector_store.query(vector_store_query)
-print(query_result.nodes[0].get_content())
-
-from llama_index.core.schema import NodeWithScore
-from typing import Optional
-
-nodes_with_scores = []
-for index, node in enumerate(query_result.nodes):
-    score: Optional[float] = None
-    if query_result.similarities is not None:
-        score = query_result.similarities[index]
-    nodes_with_scores.append(NodeWithScore(node=node, score=score))
+# nodes_with_scores = []
+# for index, node in enumerate(query_result.nodes):
+#     score: Optional[float] = None
+#     if query_result.similarities is not None:
+#         score = query_result.similarities[index]
+#     nodes_with_scores.append(NodeWithScore(node=node, score=score))
 
 
 if __name__ == "__main__":
-    retriever = VectorDBRetriever(vector_store, llm, query_mode="default", similarity_top_k=2)
-    response = retriever._retrieve(query_str)
-    print(response)
+    query_str = "Give me a summary of the diversity equity and inclusion policy."
+    retriever = VectorDBRetriever(vector_store=vector_store, embed_model=llm, query_mode="default", similarity_top_k=2)
+    # response = retriever._retrieve(query_str)
+    query_engine = RetrieverQueryEngine.from_args(retriever, llm=llm)
+    response = query_engine.query(query_str)
+    print(str(response))
     print("done!")

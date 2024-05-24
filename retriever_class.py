@@ -1,18 +1,15 @@
 from llama_index.core import QueryBundle
 from llama_index.core.retrievers import BaseRetriever
 from typing import Any, List
+from llama_index.vector_stores.postgres import PGVectorStore
+from llama_index.core.schema import NodeWithScore
+from llama_index.core.vector_stores import VectorStoreQuery
 
 
 class VectorDBRetriever(BaseRetriever):
     """Retriever over a postgres vector store."""
 
-    def __init__(
-        self,
-        vector_store: PGVectorStore,
-        embed_model: Any,
-        query_mode: str = "default",
-        similarity_top_k: int = 2,
-    ) -> None:
+    def __init__(self, vector_store: PGVectorStore, embed_model: Any, query_mode: str = "default", similarity_top_k: int = 2,) -> None:
         """Init params."""
         self._vector_store = vector_store
         self._embed_model = embed_model
@@ -22,7 +19,7 @@ class VectorDBRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve."""
-        query_embedding = embed_model.get_query_embedding(
+        query_embedding = self._embed_model.get_query_embedding(
             query_bundle.query_str
         )
         vector_store_query = VectorStoreQuery(
