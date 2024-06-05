@@ -120,9 +120,12 @@ vector_store.add(nodes)
 
 if __name__ == "__main__":
     query_str = "Give me a summary of the diversity equity and inclusion policy."
-    retriever = VectorDBRetriever(vector_store=vector_store, embed_model=llm, query_mode="default", similarity_top_k=2)
+    retriever = VectorDBRetriever(vector_store=vector_store, embed_model=embed_model, query_mode="default", similarity_top_k=2)
     # response = retriever._retrieve(query_str)
-    query_engine = RetrieverQueryEngine.from_args(retriever, llm=llm)
+    query_engine = RetrieverQueryEngine.from_args(retriever, llm=llm, verbose=True)
+    print(query_engine)
+    methods = [method for method in dir(RetrieverQueryEngine) if callable(getattr(RetrieverQueryEngine, method)) and not method.startswith("__")]
+    print(methods)
     response = query_engine.query(query_str)
     print(str(response))
     print("done!")
